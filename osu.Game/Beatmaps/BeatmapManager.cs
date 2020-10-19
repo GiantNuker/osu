@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using osu.Framework.Audio;
@@ -26,6 +27,7 @@ using osu.Game.IO;
 using osu.Game.IO.Archives;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Users;
@@ -467,6 +469,106 @@ namespace osu.Game.Beatmaps
             double startTime = b.HitObjects.First().StartTime;
 
             return endTime - startTime;
+        }
+
+        public Task ExportToStableAsync()
+        {
+            var stable = GetStableStorage?.Invoke();
+
+            if (stable == null)
+            {
+                Logger.Log("No osu!stable installation available!", LoggingTarget.Information, LogLevel.Error);
+                return Task.CompletedTask;
+            }
+
+            if (!stable.ExistsDirectory(ImportFromStablePath))
+            {
+                // This handles situations like when the user does not have a Skins folder
+                Logger.Log($"No {ImportFromStablePath} folder available in osu!stable installation", LoggingTarget.Information, LogLevel.Error);
+                return Task.CompletedTask;
+            }
+
+            return Task.Run(async () => await Export(stable, $"{ImportFromStablePath}/", GetAllUsableBeatmapSets().ToArray()));
+        }
+
+        public Task Export(params BeatmapSetInfo[] models)
+        {
+            return Export(exportStorage, "", models);
+        }
+        public Task Export(Storage storage, string subpath = "", params BeatmapSetInfo[] models)
+        {
+            var notification = new ProgressNotification { State = ProgressNotificationState.Active };
+
+            PostNotification?.Invoke(notification);
+
+            return Export(notification, storage, subpath, models);
+        }
+
+        protected async Task<IEnumerable<BeatmapSetInfo>> Export(ProgressNotification notification, Storage storage, string subpath = "", params BeatmapSetInfo[] models)
+        {
+            notification.Progress = 0;
+            notification.Text = $"{HumanisedModelName.Humanize(LetterCasing.Title)} export is initialising...";
+
+            int current = 0;
+
+            var exported = new List<BeatmapSetInfo>();
+
+            await Task.WhenAll(models.Select(async model =>
+            {
+                notification.CancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    if (!storage.Exists($"{getValidFilename(model.ToString())}{HandledExtensions.First()}") && !storage.ExistsDirectory($"{subpath}{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}") && !storage.ExistsDirectory($"{subpath}{model.ToString()}"))
+                    {
+                        Export(model, storage, $"{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}", subpath, false);
+                    }
+
+                    await Task.CompletedTask; // Hackfix cause im an idiot
+
+                    lock (exported)
+                    {
+                        exported.Add(model);
+                        current++;
+                        notification.Text = $"Exported {current} of {models.Length} {HumanisedModelName}s";
+                        notification.Progress = (float)current / models.Length;
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, $@"Could not export ({nameof(model)})", LoggingTarget.Database);
+                }
+            }));
+
+            if (exported.Count == 0)
+            {
+                notification.Text = $"{HumanisedModelName.Humanize(LetterCasing.Title)} import failed!";
+                notification.State = ProgressNotificationState.Cancelled;
+            }
+            else
+            {
+                notification.CompletionText = exported.Count == 1
+                    ? $"Imported {exported.First()}!"
+                    : $"Imported {exported.Count} {HumanisedModelName}s!";
+
+                if (exported.Count > 0 && PresentImport != null)
+                {
+                    notification.CompletionText += " Click to view.";
+                    notification.CompletionClickAction = () =>
+                    {
+                        PresentImport?.Invoke(exported);
+                        return true;
+                    };
+                }
+
+                notification.State = ProgressNotificationState.Completed;
+            }
+
+            return exported;
         }
 
         private void removeWorkingCache(BeatmapSetInfo info)

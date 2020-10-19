@@ -83,7 +83,7 @@ namespace osu.Game.Database
         // ReSharper disable once NotAccessedField.Local (we should keep a reference to this so it is not finalised)
         private ArchiveImportIPCChannel ipc;
 
-        private readonly Storage exportStorage;
+        protected readonly Storage exportStorage;
 
         protected ArchiveModelManager(Storage storage, IDatabaseContextFactory contextFactory, MutableDatabaseBackedStoreWithFileIncludes<TModel, TFileModel> modelStore, IIpcHost importHost = null)
         {
@@ -381,7 +381,11 @@ namespace osu.Game.Database
         /// Exports an item to a legacy (.zip based) package.
         /// </summary>
         /// <param name="item">The item to export.</param>
-        public void Export(TModel item)
+        /// <param name="storage">The storage to export the beatmap to</param>
+        /// <param name="filename">Name of the file to export to</param>
+        /// <param name="subpath">Additional poth segment under storage</param>
+        /// <param name="openInExplorer">Open the containing folder or not</param>
+        public void Export(TModel item, Storage storage, string filename, string subpath = "", bool openInExplorer = true)
         {
             var retrievedItem = ModelStore.ConsumableItems.FirstOrDefault(s => s.ID == item.ID);
 
@@ -393,11 +397,22 @@ namespace osu.Game.Database
                 foreach (var file in retrievedItem.Files)
                     archive.AddEntry(file.Filename, Files.Storage.GetStream(file.FileInfo.StoragePath));
 
-                using (var outputStream = exportStorage.GetStream($"{getValidFilename(item.ToString())}{HandledExtensions.First()}", FileAccess.Write, FileMode.Create))
+                using (var outputStream = storage.GetStream($"{subpath}{filename}{HandledExtensions.First()}", FileAccess.Write, FileMode.Create))
                     archive.SaveTo(outputStream);
 
-                exportStorage.OpenInNativeExplorer();
+                if (openInExplorer)
+                    storage.OpenInNativeExplorer();
             }
+        }
+
+        public void Export(TModel item)
+        {
+            Export(item, exportStorage, getValidFilename(item.ToString()));
+        }
+
+        public void OpenExportStorage()
+        {
+            exportStorage.OpenInNativeExplorer();
         }
 
         /// <summary>
@@ -617,7 +632,7 @@ namespace osu.Game.Database
         /// <summary>
         /// Set a storage with access to an osu-stable install for import purposes.
         /// </summary>
-        public Func<Storage> GetStableStorage { private get; set; }
+        public Func<Storage> GetStableStorage { get; set; }
 
         /// <summary>
         /// Denotes whether an osu-stable installation is present to perform automated imports from.
@@ -794,7 +809,7 @@ namespace osu.Game.Database
 
         #endregion
 
-        private string getValidFilename(string filename)
+        protected string getValidFilename(string filename)
         {
             foreach (char c in Path.GetInvalidFileNameChars())
                 filename = filename.Replace(c, '_');

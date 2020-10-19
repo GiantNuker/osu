@@ -61,11 +61,16 @@ namespace osu.Desktop
                 using (RegistryKey key = Registry.ClassesRoot.OpenSubKey("osu"))
                     stableInstallPath = key?.OpenSubKey(@"shell\open\command")?.GetValue(string.Empty).ToString()?.Split('"')[1].Replace("osu!.exe", "");
 
+                Logger.Log("OSU STABLE PATH?: " + stableInstallPath, LoggingTarget.Information, LogLevel.Important);
+
                 if (checkExists(stableInstallPath))
                     return stableInstallPath;
             }
             catch
             {
+                Logger.Log("OSU STABLE PATH?: COULDNT EVEN GET! - We doin da nuka", LoggingTarget.Information, LogLevel.Important);
+                stableInstallPath = "/home/admin/Games/osu/drive_c/osu/";
+                return stableInstallPath;
             }
 
             stableInstallPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"osu!");

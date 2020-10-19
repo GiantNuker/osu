@@ -22,6 +22,8 @@ namespace osu.Game.Overlays.Settings.Sections.Maintenance
         private TriangleButton importScoresButton;
         private TriangleButton importSkinsButton;
         private TriangleButton importCollectionsButton;
+        private TriangleButton exportBeatmapsButton;
+        private TriangleButton exportBeatmapsToStableButton;
         private TriangleButton deleteBeatmapsButton;
         private TriangleButton deleteScoresButton;
         private TriangleButton deleteSkinsButton;
@@ -43,6 +45,28 @@ namespace osu.Game.Overlays.Settings.Sections.Maintenance
                     }
                 });
             }
+
+            Add(exportBeatmapsButton = new SettingsButton
+            {
+                Text = "Export ALL beatmaps",
+                Action = () =>
+                {
+                    exportBeatmapsButton.Enabled.Value = false;
+
+                    beatmaps.OpenExportStorage();
+                    Task.Run(async () => await beatmaps.Export(beatmaps.GetAllUsableBeatmapSets().ToArray())).ContinueWith(t => Schedule(() => exportBeatmapsButton.Enabled.Value = true));
+                }
+            });
+
+            Add(exportBeatmapsToStableButton = new SettingsButton
+            {
+                Text = "Export missing beatmaps to stable",
+                Action = () =>
+                {
+                    exportBeatmapsToStableButton.Enabled.Value = false;
+                    beatmaps.ExportToStableAsync().ContinueWith(t => Schedule(() => exportBeatmapsToStableButton.Enabled.Value = true));
+                }
+            });
 
             Add(deleteBeatmapsButton = new DangerousSettingsButton
             {
