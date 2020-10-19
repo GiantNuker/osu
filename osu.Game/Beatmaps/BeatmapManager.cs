@@ -519,9 +519,9 @@ namespace osu.Game.Beatmaps
 
                 try
                 {
-                    if (!storage.Exists($"{getValidFilename(model.ToString())}{HandledExtensions.First()}") && !storage.ExistsDirectory($"{subpath}{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}") && !storage.ExistsDirectory($"{subpath}{model.ToString()}"))
+                    if (!storage.Exists($"{subpath}{getValidFilename(model.ToString())}{HandledExtensions.First()}") && !storage.Exists($"{$"{subpath}{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}".Replace(".", "").Replace("\"", "")}.osz") && !storage.ExistsDirectory($"{subpath}{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}".Replace(".", "").Replace("\"", "")) && !storage.ExistsDirectory($"{subpath}{getValidFilename(model.ToString())}"))
                     {
-                        Export(model, storage, $"{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}", subpath, false);
+                        Export(model, storage, $"{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}".Replace(".", "").Replace("\"", ""), subpath, false);
                     }
 
                     await Task.CompletedTask; // Hackfix cause im an idiot
