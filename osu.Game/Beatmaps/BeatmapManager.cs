@@ -519,9 +519,12 @@ namespace osu.Game.Beatmaps
 
                 try
                 {
-                    if (!storage.Exists($"{subpath}{getValidFilename(model.ToString())}{HandledExtensions.First()}") && !storage.Exists($"{$"{subpath}{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}".Replace(".", "").Replace("\"", "")}.osz") && !storage.ExistsDirectory($"{subpath}{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}".Replace(".", "").Replace("\"", "")) && !storage.ExistsDirectory($"{subpath}{getValidFilename(model.ToString())}"))
+                    string filename1 = $"{subpath}{normalizeName(getValidFilename(model.ToString()))}";
+                    string filename2 = $"{subpath}{normalizeName($"{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}")}";
+
+                    if (!storage.Exists($"{filename1}{HandledExtensions.First()}") && !storage.Exists($"{filename2}{HandledExtensions.First()}") && !storage.ExistsDirectory(filename1) && !storage.ExistsDirectory(filename2))
                     {
-                        Export(model, storage, $"{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}".Replace(".", "").Replace("\"", ""), subpath, false);
+                        Export(model, storage, normalizeName($"{model.OnlineBeatmapSetID} {model.Metadata.Artist} - {model.Metadata.Title}"), subpath, false);
                     }
 
                     await Task.CompletedTask; // Hackfix cause im an idiot
@@ -552,8 +555,8 @@ namespace osu.Game.Beatmaps
             else
             {
                 notification.CompletionText = exported.Count == 1
-                    ? $"Imported {exported.First()}!"
-                    : $"Imported {exported.Count} {HumanisedModelName}s!";
+                    ? $"Exported {exported.First()}!"
+                    : $"Exported {exported.Count} {HumanisedModelName}s!";
 
                 if (exported.Count > 0 && PresentImport != null)
                 {
@@ -569,6 +572,25 @@ namespace osu.Game.Beatmaps
             }
 
             return exported;
+        }
+
+        private string normalizeName(string name)
+        {
+            string result = "";
+
+            foreach (var c in name.ToCharArray())
+            {
+                if (!"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!()- ".Contains(c))
+                {
+                    result += "_";
+                }
+                else
+                {
+                    result += c;
+                }
+            }
+
+            return result;
         }
 
         private void removeWorkingCache(BeatmapSetInfo info)
