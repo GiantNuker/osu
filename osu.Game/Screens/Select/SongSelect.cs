@@ -555,7 +555,7 @@ namespace osu.Game.Screens.Select
         {
             base.LogoArriving(logo, resuming);
 
-            Vector2 position = new Vector2(0.95f, 0.96f);
+            Vector2 position = new Vector2(0.96f, 0.96f);
 
             if (logo.Alpha > 0.8f)
             {
