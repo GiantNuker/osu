@@ -49,6 +49,8 @@ namespace osu.Game.Screens.Select
         private const float left_area_padding = 20;
 
         private Bindable<float> backgroundBlurBindable { get; set; }
+        private Bindable<bool> playBeginningSelect { get; set; }
+        private Bindable<bool> playBeginningRepeat { get; set; }
 
         public FilterControl FilterControl { get; private set; }
 
@@ -312,6 +314,8 @@ namespace osu.Game.Screens.Select
             }
 
             backgroundBlurBindable = config.GetBindable<float>(OsuSetting.MenuBlurLevel);
+            playBeginningSelect = config.GetBindable<bool>(OsuSetting.PlayBeginningSelect);
+            playBeginningRepeat = config.GetBindable<bool>(OsuSetting.PlayBeginningRepeat);
         }
 
         protected override void LoadComplete()
@@ -702,10 +706,20 @@ namespace osu.Game.Screens.Select
 
             bool isNewTrack = !lastTrack.TryGetTarget(out var last) || last != track;
 
-            track.RestartPoint = Beatmap.Value.Metadata.PreviewTime;
+            if (!playBeginningSelect.Value)
+            {
+                track.RestartPoint = Beatmap.Value.Metadata.PreviewTime;
+            }
 
             if (!track.IsRunning && (music.IsUserPaused != true || isNewTrack))
+            {
                 music.Play(true);
+            }
+
+            if (!playBeginningSelect.Value && playBeginningRepeat.Value)
+            {
+                track.RestartPoint = 0;
+            }
 
             lastTrack.SetTarget(track);
         }

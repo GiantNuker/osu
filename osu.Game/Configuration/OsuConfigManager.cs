@@ -83,6 +83,9 @@ namespace osu.Game.Configuration
 
             Set(OsuSetting.MenuParallax, true);
 
+            Set(OsuSetting.PlayBeginningSelect, false);
+            Set(OsuSetting.PlayBeginningRepeat, true);
+
             // Gameplay
             Set(OsuSetting.DimLevel, 0.8, 0, 1, 0.01);
             Set(OsuSetting.BlurLevel, 0, 0, 1, 0.01);
@@ -241,5 +244,7 @@ namespace osu.Game.Configuration
         HitLighting,
         MenuBackgroundSource,
         GameplayDisableWinKey,
+        PlayBeginningSelect,
+        PlayBeginningRepeat,
     }
 }
