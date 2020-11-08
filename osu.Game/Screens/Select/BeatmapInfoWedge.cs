@@ -33,7 +33,7 @@ namespace osu.Game.Screens.Select
 {
     public class BeatmapInfoWedge : VisibilityContainer
     {
-        private const float shear_width = 36.75f;
+        private const float shear_width = 56.75f;
 
         private static readonly Vector2 wedged_container_shear = new Vector2(shear_width / SongSelect.WEDGE_HEIGHT, 0);
 
