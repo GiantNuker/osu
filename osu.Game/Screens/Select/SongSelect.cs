@@ -732,7 +732,7 @@ namespace osu.Game.Screens.Select
                 track.RestartPoint = Beatmap.Value.Metadata.PreviewTime;
             }
 
-            if (!track.IsRunning && (music.IsUserPaused != true || isNewTrack))
+            if (!track.IsRunning && (music.UserPauseRequested != true || isNewTrack))
             {
                 music.Play(true);
             }
